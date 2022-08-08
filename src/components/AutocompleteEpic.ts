@@ -14,7 +14,7 @@ import { Reducer } from "redux";
 import { Epic } from "redux-observable";
 import { isOfType } from 'typesafe-actions';
 
-import { Action, State, OptionsAction, MappingAction, SelectedAction, OptionData } from "../types";
+import { Action, State, OptionsAction, MappingAction, OptionData } from "../types";
 
 export const autocompleteEpic: Epic<Action, OptionsAction> = action$ => {
   const input$: Observable<string> = action$.pipe(
