@@ -14,7 +14,7 @@ import { Reducer } from "redux";
 import { Epic } from "redux-observable";
 import { isOfType } from 'typesafe-actions';
 
-import { Action, State, OptionsAction } from "../types";
+import { Action, State, OptionsAction, MappingAction, SelectedAction, OptionData } from "../types";
 
 export const autocompleteEpic: Epic<Action, OptionsAction> = action$ => {
   const input$: Observable<string> = action$.pipe(
@@ -63,9 +63,46 @@ export const autocompleteEpic: Epic<Action, OptionsAction> = action$ => {
   );
 };
 
+export const mapEpic: Epic<Action, MappingAction> = (action$, $store) => {
+  const selected$: Observable<OptionData> = action$.pipe(
+    filter(isOfType("selected")),
+    map(action => action.payload)
+  );
+
+  return selected$.pipe(
+    switchMap(input => {
+      if (input !== null) {
+        return ajax({
+          url:`https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api/place/details/json?placeid=${input.key}&key=${process.env.REACT_APP_GOOGLE_API_KEY}`, 
+          crossDomain: true,
+          responseType:'json',
+          headers:{
+            "Access-Control-Allow-Origin" : "*",
+            "Access-Control-Allow-Headers": "*",
+          }
+        })
+          .pipe(
+            map((resp) => {
+              return ( resp.response as {
+                result: { geometry: { location: { lat: number; place_id: number} } };
+              })
+            }),
+            catchError(error => {
+              console.log('error: ', error);
+              return of(error);
+            })
+          )
+      } else {
+        return of([]);
+      }
+    }),
+    map(loc => ({ type: "mapping", payload: loc.result.geometry.location}))
+  )
+};
+
 export const autocompleteReducer: Reducer<State, Action> = (state, action) => {
   if (state === undefined) {
-    return { options: [], input: "", tooLong: false, history: [], selected: { key: "", value: ""} };
+    return { options: [], input: "", tooLong: false, history: [], selected: { key: "", value: ""}, mapping: {lat: 0, lng: 0} };
   }
 
   switch (action.type) {
@@ -76,13 +113,19 @@ export const autocompleteReducer: Reducer<State, Action> = (state, action) => {
         ...state,
         options: [],
         input: action.payload,
-        tooLong: action.payload.length > 30
+        tooLong: action.payload.length > 30,
+        selected: null,
+        history: state?.selected?.key ? state.history.filter( hs => hs.key === state?.selected?.key).length > 0 ? state.history : [].concat(state.history, state.selected) : state.history,
       };
     case "selected":
       return {
         ...state,
         selected: action.payload,
-        history: state.history.filter( hs => hs.key === action.payload.key).length > 0 ? state.history : [].concat(state.history, action.payload)
-      }
+      };
+    case "mapping":
+      return {
+        ...state,
+        mapping: action.payload,
+      };
   }
 };
