@@ -1,4 +1,4 @@
-const MapStyle = [
+const mapStyle = [
 	{
 		featureType: "all",
 		elementType: "geometry.fill",
@@ -168,4 +168,4 @@ const MapStyle = [
 		],
 	},
 ];
-export default MapStyle;
+export default mapStyle;

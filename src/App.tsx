@@ -5,7 +5,7 @@ import { AutoComplete, Card } from "antd";
 
 import { Action, State, Props, OptionData } from "./types";
 import "antd/dist/antd.min.css";
-import MapStyle from "./style/MapStyle";
+import mapStyle from "./style/mapStyle";
 
 const Input: React.FC<Props> = props => {
 
@@ -14,7 +14,7 @@ const Input: React.FC<Props> = props => {
     width: "100vw",
   };
   const options = {
-    styles: MapStyle,
+    styles: mapStyle,
     disableDefaultUI: true,
     zoomControl: true,
   };
